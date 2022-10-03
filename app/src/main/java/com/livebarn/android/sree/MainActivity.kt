@@ -18,6 +18,7 @@ class MainActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+        private val DEFAULT_GIF = Constants.claps["Standing Ovation"]
     }
 
     private var imageView: ImageView? = null
@@ -58,18 +59,23 @@ class MainActivity : FragmentActivity() {
 
     private val messageValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            val message = snapshot.getValue(String::class.java) ?: "Congrats!"
-            textViewMessage?.text = message
+            val message = snapshot.getValue(String::class.java)
+            textViewMessage?.text = if (message.isNullOrEmpty()) "Congrats!" else message
         }
 
         override fun onCancelled(error: DatabaseError) {
             Log.e(TAG, "onCancelled() messageValueListener -> ${error.message}")
+            textViewMessage?.text = "Congrats!"
         }
     }
 
     private val targetGifValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            val targetGif = snapshot.getValue(String::class.java) ?: Constants.claps["Joker"]
+            var targetGif = snapshot.getValue(String::class.java)
+            if (targetGif.isNullOrEmpty()) {
+                targetGif = DEFAULT_GIF
+            }
+
             imageView?.let {
                 Glide.with(this@MainActivity)
                     .asGif()
@@ -80,6 +86,12 @@ class MainActivity : FragmentActivity() {
 
         override fun onCancelled(error: DatabaseError) {
             Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
+            imageView?.let {
+                Glide.with(this@MainActivity)
+                    .asGif()
+                    .load(DEFAULT_GIF)
+                    .into(it)
+            }
         }
     }
 }
