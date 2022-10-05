@@ -1,3 +1,11 @@
 <resources>
     <string name="app_name">SreeManager</string>
+    <string name="default_congrats_message">@string/default_congrats</string>
+
+    <string name="hint_message">Leave your message</string>
+
+    <string name="button_save">Save</string>
+
+    <string name="content_desc_button_clear">clear button</string>
+    <string name="content_desc_selected_gif">selected gif</string>
 </resources>

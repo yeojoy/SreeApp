@@ -5,9 +5,10 @@ object Constants {
     /* DB */
     const val DB_TABLE = "SreeApp"
     const val DB_PATH_MESSAGE = "message"
-    const val DB_PATH_GIFS = "gifs"
     const val DB_PATH_TARGET_GIF = "targetGif"
-    const val DB_PATH_TYPE_ID = "typeId"
+    const val DB_PATH_GIFS = "gifs"
+    const val DB_PATH_GIF_CLAPS = "claps"
+    const val DB_PATH_GIF_HAPPY_BDAY = "happyBDay"
     /* End of DB */
 
     val claps = hashMapOf(

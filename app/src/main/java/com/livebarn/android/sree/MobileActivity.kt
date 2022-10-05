@@ -15,7 +15,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
 
-class MainActivity : FragmentActivity() {
+class MobileActivity : FragmentActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
@@ -82,7 +82,7 @@ class MainActivity : FragmentActivity() {
             }
 
             imageView?.let {
-                Glide.with(this@MainActivity)
+                Glide.with(this@MobileActivity)
                     .asGif()
                     .load(targetGif)
                     .into(it)
@@ -92,7 +92,7 @@ class MainActivity : FragmentActivity() {
         override fun onCancelled(error: DatabaseError) {
             Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
             imageView?.let {
-                Glide.with(this@MainActivity)
+                Glide.with(this@MobileActivity)
                     .asGif()
                     .load(DEFAULT_GIF)
                     .into(it)

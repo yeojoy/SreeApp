@@ -29,10 +29,12 @@ class ManagerActivity : AppCompatActivity() {
         private val DEFAULT_GIF = Constants.claps["Standing Ovation"]
     }
 
+    private val clapsGifList = mutableListOf<String>()
+    private val happyBDayGifList = mutableListOf<String>()
+
     private var messageDBReference: DatabaseReference? = null
     private var targetGifDBReference: DatabaseReference? = null
     private var gifsDBReference: DatabaseReference? = null
-    private var typeDBReference: DatabaseReference? = null
 
     private var editTextMessage: EditText? = null
     private var imageViewSelectedGif: ImageView? = null
@@ -42,6 +44,7 @@ class ManagerActivity : AppCompatActivity() {
 
     private var oldPosition = 0
     private val gifList = mutableListOf<String>()
+    private var currentType = CelebrationType.NONE
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,7 +74,7 @@ class ManagerActivity : AppCompatActivity() {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 textViewMessageLength?.text =
-                    String.format("Length: %d", editTextMessage?.length() ?: 0)
+                    getString(com.livebarn.android.sreelibrary.R.string.label_message_length, editTextMessage?.length() ?: 0)
             }
         })
 
@@ -87,9 +90,9 @@ class ManagerActivity : AppCompatActivity() {
             ) {
                 if (oldPosition != position) {
                     oldPosition = position
-                    val type = CelebrationType.findById(position)
-                    Log.d(TAG, "onItemSelected(position: $position, ${type.title})")
-                    typeDBReference?.setValue(type.id)
+                    currentType = CelebrationType.findById(position)
+                    Log.d(TAG, "onItemSelected(position: $position, ${currentType.title})")
+                    updateGifList()
                 }
             }
 
@@ -99,12 +102,16 @@ class ManagerActivity : AppCompatActivity() {
         }
 
         recyclerViewGifs?.layoutManager = LinearLayoutManager(this)
-        recyclerViewGifs?.adapter = GifAdapter(gifList)
+        recyclerViewGifs?.adapter = GifAdapter(gifList, this::onGifSelected)
     }
 
     override fun onStart() {
         super.onStart()
         bindDatabase()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
     }
 
     override fun onStop() {
@@ -121,34 +128,47 @@ class ManagerActivity : AppCompatActivity() {
         recyclerViewGifs = null
     }
 
+    private fun onGifSelected(position: Int) {
+        updateTargetGif(
+            try {
+                gifList[position]
+            } catch (e: Exception) {
+                null
+            }
+        )
+    }
+
+    private fun updateTargetGif(url: String?) {
+        url?.let {
+            targetGifDBReference?.setValue(url)
+        }
+    }
+
     private fun bindDatabase() {
         val databaseReference = Firebase.database.getReference(Constants.DB_TABLE)
         messageDBReference = databaseReference.child(Constants.DB_PATH_MESSAGE)
         targetGifDBReference = databaseReference.child(Constants.DB_PATH_TARGET_GIF)
         gifsDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
-        typeDBReference = databaseReference.child(Constants.DB_PATH_TYPE_ID)
 
         messageDBReference?.addValueEventListener(messageValueListener)
         targetGifDBReference?.addValueEventListener(targetGifValueListener)
         gifsDBReference?.addValueEventListener(gifsValueListener)
-        typeDBReference?.addValueEventListener(typeValueListener)
     }
 
     private fun releaseDatabase() {
         messageDBReference?.removeEventListener(messageValueListener)
         targetGifDBReference?.removeEventListener(targetGifValueListener)
         gifsDBReference?.removeEventListener(gifsValueListener)
-        typeDBReference?.removeEventListener(typeValueListener)
 
         messageDBReference = null
         targetGifDBReference = null
         gifsDBReference = null
-        typeDBReference = null
     }
 
     private val messageValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-            val message = snapshot.getValue(String::class.java) ?: "Congrats!"
+            val message = snapshot.getValue(String::class.java)
+                ?: getString(R.string.default_congrats_message)
             editTextMessage?.setText(message)
         }
 
@@ -180,27 +200,28 @@ class ManagerActivity : AppCompatActivity() {
 
     private val gifsValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
-
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
-        }
-    }
-
-    private val typeValueListener = object : ValueEventListener {
-
-        @SuppressLint("NotifyDataSetChanged")
-        override fun onDataChange(snapshot: DataSnapshot) {
-            snapshot.getValue(Int::class.java)?.let {
-                spinnerCelebrationType?.setSelection(it)
-                val type = CelebrationType.findById(it)
-                gifList.clear()
-                when (type) {
-                    CelebrationType.HAPPY_B_DAY -> gifList.addAll(Constants.happyBDay.values)
-                    else ->  gifList.addAll(Constants.claps.values)
+            if (snapshot.hasChild(Constants.DB_PATH_GIF_CLAPS).not()
+                || snapshot.child(Constants.DB_PATH_GIF_CLAPS).hasChildren().not()) {
+                // TODO insert data
+                insertClapsGifs()
+                insertHappyBDayGifs()
+            } else {
+                clapsGifList.clear()
+                for (url in snapshot.child(Constants.DB_PATH_GIF_CLAPS).children) {
+                    (url.value as? String)?.let {
+                        clapsGifList.add(it)
+                    }
                 }
-                recyclerViewGifs?.adapter?.notifyDataSetChanged()
+            }
+
+            if (snapshot.hasChild(Constants.DB_PATH_GIF_HAPPY_BDAY)
+                && snapshot.child(Constants.DB_PATH_GIF_HAPPY_BDAY).hasChildren()) {
+                happyBDayGifList.clear()
+                for (url in snapshot.child(Constants.DB_PATH_GIF_HAPPY_BDAY).children) {
+                    (url.value as? String)?.let {
+                        happyBDayGifList.add(it)
+                    }
+                }
             }
         }
 
@@ -209,15 +230,47 @@ class ManagerActivity : AppCompatActivity() {
         }
     }
 
+    private fun insertHappyBDayGifs() {
+        gifsDBReference?.child(Constants.DB_PATH_GIF_HAPPY_BDAY)?.let {
+            for (url in Constants.happyBDay.values) {
+                it.push().setValue(url)
+            }
+        }
+    }
+
+    private fun insertClapsGifs() {
+        gifsDBReference?.child(Constants.DB_PATH_GIF_CLAPS)?.let {
+            for (url in Constants.claps.values) {
+                it.push().setValue(url)
+            }
+        }
+    }
+
+
+    @SuppressLint("NotifyDataSetChanged")
+    private fun updateGifList() {
+        gifList.clear()
+        when (currentType) {
+            CelebrationType.HAPPY_B_DAY -> gifList.addAll(happyBDayGifList)
+            CelebrationType.ANNIVERSARY -> gifList.addAll(clapsGifList)
+            CelebrationType.NEW_PEOPLE -> gifList.addAll(clapsGifList)
+            else -> {
+
+            }
+        }
+        recyclerViewGifs?.adapter?.notifyDataSetChanged()
+    }
+
     class GifAdapter(
-        private val gifs: MutableList<String>
+        private val gifs: MutableList<String>,
+        private var itemSelectListener: ((position: Int) -> Unit)? = null
     ) : RecyclerView.Adapter<GifAdapter.GifViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GifViewHolder {
             val imageView = ImageView(parent.context)
             imageView.adjustViewBounds = true
 
-            return GifViewHolder(imageView)
+            return GifViewHolder(imageView, itemSelectListener)
         }
 
         override fun onBindViewHolder(holder: GifViewHolder, position: Int) {
@@ -238,8 +291,17 @@ class ManagerActivity : AppCompatActivity() {
 
         override fun getItemCount() = gifs.size
 
-        class GifViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        class GifViewHolder(
+            itemView: View,
+            private var onClickListener: ((position: Int) -> Unit)?
+        ) : RecyclerView.ViewHolder(itemView) {
             var imageView = itemView as? ImageView
+
+            init {
+                itemView.setOnClickListener {
+                    onClickListener?.invoke(adapterPosition)
+                }
+            }
         }
     }
 }

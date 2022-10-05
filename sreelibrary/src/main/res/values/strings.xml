@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="default_congrats">Congrats!</string>
+    <string name="label_message_length" formatted="false">Length: %d</string>
+</resources>

@@ -1,4 +1,3 @@
 <resources>
-
     <style name="Theme.Sree" parent="@style/Theme.Leanback" />
 </resources>

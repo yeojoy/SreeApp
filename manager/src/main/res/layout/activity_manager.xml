@@ -10,16 +10,17 @@
         android:id="@+id/edit_text_message"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:minHeight="48dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="48dp"
         android:layout_marginEnd="16dp"
-        android:hint="Leave your message"
+        android:hint="@string/hint_message"
         android:maxLines="2"
+        android:minHeight="48dp"
         android:paddingEnd="36dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        tools:ignore="RtlSymmetry"
         tools:text="Hello world!" />
 
     <TextView
@@ -35,8 +36,9 @@
         android:id="@+id/image_button_clear"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:padding="12dp"
         android:background="@drawable/rect_transparent"
+        android:contentDescription="@string/content_desc_button_clear"
+        android:padding="12dp"
         android:src="@drawable/ic_clear"
         app:layout_constraintEnd_toEndOf="@id/edit_text_message"
         app:layout_constraintTop_toTopOf="@id/edit_text_message" />
@@ -47,7 +49,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:backgroundTint="#00a800"
-        android:text="Save"
+        android:text="@string/button_save"
         android:textAllCaps="false"
         android:textColor="@color/white"
         app:layout_constraintEnd_toEndOf="@id/edit_text_message"
@@ -61,6 +63,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
         android:adjustViewBounds="true"
+        android:contentDescription="@string/content_desc_selected_gif"
         app:layout_constraintEnd_toStartOf="@id/button_save"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/edit_text_message" />
