@@ -66,7 +66,10 @@ class ManagerActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.button_save).setOnClickListener {
-            messageDBReference?.setValue(editTextMessage?.text.toString())
+            val message = editTextMessage?.text.toString()
+            messageDBReference?.setValue(message)
+            editTextMessage?.setSelection(message.length)
+            // TODO hide keyboard
         }
 
         editTextMessage?.addTextChangedListener(object : TextWatcher {
@@ -78,6 +81,8 @@ class ManagerActivity : AppCompatActivity() {
                     getString(com.livebarn.android.sreelibrary.R.string.label_message_length, editTextMessage?.length() ?: 0)
             }
         })
+
+        // TODO bind imagebutton event
 
         val types = CelebrationType.values().map { it.title }
         spinnerCelebrationType?.adapter =

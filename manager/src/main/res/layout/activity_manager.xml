@@ -55,6 +55,45 @@
         app:layout_constraintEnd_toEndOf="@id/edit_text_message"
         app:layout_constraintTop_toBottomOf="@id/edit_text_message" />
 
+    <ImageButton
+        android:foregroundTint="@color/purple_200"
+        android:id="@+id/image_button_align_top"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/rect_bg_button"
+        android:contentDescription="@string/content_desc_button_clear"
+        android:padding="12dp"
+        android:src="@drawable/ic_top"
+        app:layout_constraintEnd_toEndOf="@id/edit_text_message"
+        app:layout_constraintTop_toBottomOf="@id/button_save" />
+
+    <ImageButton
+        android:foregroundTint="@color/purple_200"
+        android:id="@+id/image_button_align_center"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="5dp"
+        android:background="@drawable/rect_bg_button"
+        android:contentDescription="@string/content_desc_button_clear"
+        android:padding="12dp"
+        android:src="@drawable/ic_center"
+        app:layout_constraintEnd_toEndOf="@id/edit_text_message"
+        app:layout_constraintTop_toBottomOf="@id/image_button_align_top" />
+
+    <ImageButton
+        android:foregroundTint="@color/purple_200"
+        android:id="@+id/image_button_align_bottom"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="5dp"
+        android:background="@drawable/rect_bg_button"
+        android:contentDescription="@string/content_desc_button_clear"
+        android:padding="12dp"
+        android:src="@drawable/ic_bottom"
+        app:layout_constraintEnd_toEndOf="@id/edit_text_message"
+        app:layout_constraintTop_toBottomOf="@id/image_button_align_center" />
+
     <ImageView
         android:id="@+id/image_view_selected_gif"
         android:layout_width="0dp"
