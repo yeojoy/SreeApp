@@ -35,6 +35,7 @@ class ManagerActivity : AppCompatActivity() {
     private var messageDBReference: DatabaseReference? = null
     private var targetGifDBReference: DatabaseReference? = null
     private var gifsDBReference: DatabaseReference? = null
+    private var locationDBReference: DatabaseReference? = null
 
     private var editTextMessage: EditText? = null
     private var imageViewSelectedGif: ImageView? = null
@@ -149,6 +150,7 @@ class ManagerActivity : AppCompatActivity() {
         messageDBReference = databaseReference.child(Constants.DB_PATH_MESSAGE)
         targetGifDBReference = databaseReference.child(Constants.DB_PATH_TARGET_GIF)
         gifsDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
+        locationDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
 
         messageDBReference?.addValueEventListener(messageValueListener)
         targetGifDBReference?.addValueEventListener(targetGifValueListener)

@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.WindowManager
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
 import com.google.firebase.database.DataSnapshot
@@ -15,16 +16,7 @@ import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
 
-class MainActivity : FragmentActivity() {
-
-    companion object {
-        private const val TAG = "MainActivity"
-        private val DEFAULT_GIF = Constants.claps["Standing Ovation"]
-    }
-
-    private var imageView: ImageView? = null
-    private var textViewMessage: TextView? = null
-    private var databaseReference: DatabaseReference? = null
+class MainActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +34,8 @@ class MainActivity : FragmentActivity() {
             ?.addValueEventListener(messageValueListener)
         databaseReference?.child(Constants.DB_PATH_TARGET_GIF)
             ?.addValueEventListener(targetGifValueListener)
+        databaseReference?.child(Constants.DB_PATH_LOCATION)
+            ?.addValueEventListener(locationValueListener)
     }
 
     override fun onStop() {
@@ -50,6 +44,8 @@ class MainActivity : FragmentActivity() {
             ?.removeEventListener(messageValueListener)
         databaseReference?.child(Constants.DB_PATH_TARGET_GIF)
             ?.removeEventListener(targetGifValueListener)
+        databaseReference?.child(Constants.DB_PATH_LOCATION)
+            ?.removeEventListener(locationValueListener)
         databaseReference = null
     }
 
@@ -59,42 +55,12 @@ class MainActivity : FragmentActivity() {
         textViewMessage = null
     }
 
-    private val messageValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val message = snapshot.getValue(String::class.java)
-            if (message.isNullOrEmpty())
-                textViewMessage?.setText(R.string.default_congrats_message)
-            else
-                textViewMessage?.text = message
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() messageValueListener -> ${error.message}")
-            textViewMessage?.setText(R.string.default_congrats_message)
-        }
-    }
-
-    private val targetGifValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            var targetGif = snapshot.getValue(String::class.java)
-            if (targetGif.isNullOrEmpty()) {
-                targetGif = DEFAULT_GIF
-            }
-
-            imageView?.let {
-                Glide.with(this@MainActivity)
+    override fun setGif(url: String?) {
+        imageView?.let {
+            url?.let { targetUrl ->
+                Glide.with(this)
                     .asGif()
-                    .load(targetGif)
-                    .into(it)
-            }
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
-            imageView?.let {
-                Glide.with(this@MainActivity)
-                    .asGif()
-                    .load(DEFAULT_GIF)
+                    .load(targetUrl)
                     .into(it)
             }
         }

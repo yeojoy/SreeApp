@@ -7,9 +7,16 @@ object Constants {
     const val DB_PATH_MESSAGE = "message"
     const val DB_PATH_TARGET_GIF = "targetGif"
     const val DB_PATH_GIFS = "gifs"
+    const val DB_PATH_LOCATION = "location"
     const val DB_PATH_GIF_CLAPS = "claps"
     const val DB_PATH_GIF_HAPPY_BDAY = "happyBDay"
     /* End of DB */
+
+    /* value */
+    const val DB_VALUE_TOP = "top"
+    const val DB_VALUE_CENTER = "center"
+    const val DB_VALUE_BOTTOM = "bottom"
+    /* End of value */
 
     val claps = hashMapOf(
         "Standing Ovation" to "https://media4.giphy.com/media/qIXVd1RoKGqlO/giphy.gif?cid=790b761168f0f0aebcb2525b012b1240e887d85d8b4b790d",
