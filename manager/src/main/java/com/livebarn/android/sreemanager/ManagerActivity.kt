@@ -10,6 +10,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
@@ -20,6 +21,7 @@ import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
+import com.livebarn.android.sreelibrary.hideKeyboard
 import com.livebarn.android.sreelibrary.model.CelebrationType
 
 class ManagerActivity : AppCompatActivity() {
@@ -35,10 +37,15 @@ class ManagerActivity : AppCompatActivity() {
     private var messageDBReference: DatabaseReference? = null
     private var targetGifDBReference: DatabaseReference? = null
     private var gifsDBReference: DatabaseReference? = null
-    private var locationDBReference: DatabaseReference? = null
+    private var alignDBReference: DatabaseReference? = null
+
+    private var imageButtonAlignTop: ImageView? = null
+    private var imageButtonAlignCenter: ImageView? = null
+    private var imageButtonAlignBotoom: ImageView? = null
 
     private var editTextMessage: EditText? = null
     private var imageViewSelectedGif: ImageView? = null
+    private var textViewDummyMessage: TextView? = null
     private var textViewMessageLength: TextView? = null
     private var spinnerCelebrationType: Spinner? = null
     private var recyclerViewGifs: RecyclerView? = null
@@ -46,6 +53,11 @@ class ManagerActivity : AppCompatActivity() {
     private var oldPosition = 0
     private val gifList = mutableListOf<String>()
     private var currentType = CelebrationType.NONE
+
+    private val buttonBackgroundArray = arrayOf(
+        com.livebarn.android.sreelibrary.R.drawable.rect_bg_button,
+        com.livebarn.android.sreelibrary.R.drawable.rect_bg_button_selected
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,8 +71,14 @@ class ManagerActivity : AppCompatActivity() {
         imageViewSelectedGif = findViewById(R.id.image_view_selected_gif)
         textViewMessageLength = findViewById(R.id.text_view_message_length)
         spinnerCelebrationType = findViewById(R.id.spinner_celebration_type)
-        recyclerViewGifs = findViewById(R.id.recycler_view_gifs)
 
+        imageButtonAlignTop = findViewById(R.id.image_button_align_top)
+        imageButtonAlignCenter = findViewById(R.id.image_button_align_center)
+        imageButtonAlignBotoom = findViewById(R.id.image_button_align_bottom)
+
+        textViewDummyMessage = findViewById(R.id.text_view_dummy_message)
+
+        recyclerViewGifs = findViewById(R.id.recycler_view_gifs)
         findViewById<ImageButton>(R.id.image_button_clear).setOnClickListener {
             editTextMessage?.setText("")
         }
@@ -69,7 +87,7 @@ class ManagerActivity : AppCompatActivity() {
             val message = editTextMessage?.text.toString()
             messageDBReference?.setValue(message)
             editTextMessage?.setSelection(message.length)
-            // TODO hide keyboard
+            hideKeyboard()
         }
 
         editTextMessage?.addTextChangedListener(object : TextWatcher {
@@ -83,6 +101,15 @@ class ManagerActivity : AppCompatActivity() {
         })
 
         // TODO bind imagebutton event
+        imageButtonAlignTop?.setOnClickListener {
+            alignDBReference?.setValue(Constants.DB_VALUE_TOP)
+        }
+        imageButtonAlignCenter?.setOnClickListener {
+            alignDBReference?.setValue(Constants.DB_VALUE_CENTER)
+        }
+        imageButtonAlignBotoom?.setOnClickListener {
+            alignDBReference?.setValue(Constants.DB_VALUE_BOTTOM)
+        }
 
         val types = CelebrationType.values().map { it.title }
         spinnerCelebrationType?.adapter =
@@ -132,6 +159,9 @@ class ManagerActivity : AppCompatActivity() {
         textViewMessageLength = null
         spinnerCelebrationType = null
         recyclerViewGifs = null
+        imageButtonAlignTop = null
+        imageButtonAlignCenter = null
+        imageButtonAlignBotoom = null
     }
 
     private fun onGifSelected(position: Int) {
@@ -155,11 +185,12 @@ class ManagerActivity : AppCompatActivity() {
         messageDBReference = databaseReference.child(Constants.DB_PATH_MESSAGE)
         targetGifDBReference = databaseReference.child(Constants.DB_PATH_TARGET_GIF)
         gifsDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
-        locationDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
+        alignDBReference = databaseReference.child(Constants.DB_PATH_LOCATION)
 
         messageDBReference?.addValueEventListener(messageValueListener)
         targetGifDBReference?.addValueEventListener(targetGifValueListener)
         gifsDBReference?.addValueEventListener(gifsValueListener)
+        alignDBReference?.addValueEventListener(alignValueListener)
     }
 
     private fun releaseDatabase() {
@@ -181,6 +212,40 @@ class ManagerActivity : AppCompatActivity() {
 
         override fun onCancelled(error: DatabaseError) {
             Log.e(TAG, "onCancelled() messageValueListener -> ${error.message}")
+        }
+    }
+
+    private val alignValueListener = object : ValueEventListener {
+        override fun onDataChange(snapshot: DataSnapshot) {
+            val textViewLayoutParams = textViewDummyMessage?.layoutParams as? ConstraintLayout.LayoutParams
+            when (snapshot.getValue(String::class.java)) {
+                Constants.DB_VALUE_TOP -> {
+                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[1])
+                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
+                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[0])
+                    textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
+                    textViewLayoutParams?.bottomToBottom = -1
+                }
+                Constants.DB_VALUE_CENTER -> {
+                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
+                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[1])
+                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[0])
+                    textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
+                    textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
+                }
+                else -> {
+                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
+                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
+                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[1])
+                    textViewLayoutParams?.topToTop = -1
+                    textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
+                }
+            }
+            textViewDummyMessage?.layoutParams = textViewLayoutParams
+        }
+
+        override fun onCancelled(error: DatabaseError) {
+            Log.e(TAG, "onCancelled() locationValueListener -> ${error.message}")
         }
     }
 
