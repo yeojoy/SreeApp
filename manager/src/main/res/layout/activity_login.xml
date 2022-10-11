@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <TextView
+        android:id="@+id/text_view_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:fontFamily="@font/presee_start_2p_r"
+        android:gravity="center"
+        android:lineSpacingExtra="8dp"
+        android:text="Sree app Manager"
+        android:textSize="36sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <EditText
+        android:id="@+id/edit_text_email"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rect_transparent"
+        android:ellipsize="end"
+        android:hint="your email address"
+        android:inputType="textEmailAddress"
+        android:maxLines="1"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        tools:text="yeojoy.kim.hekdkajfdjgndk@gmail.com"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/text_view_title" />
+
+    <ImageView
+        android:id="@+id/image_view_edit_text_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginBottom="10dp"
+        android:src="@drawable/ic_email"
+        app:layout_constraintBottom_toBottomOf="@id/edit_text_email"
+        app:layout_constraintStart_toStartOf="@id/edit_text_email" />
+
+    <ImageButton
+        android:id="@+id/image_button_clear"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:paddingTop="2dp"
+        android:layout_marginEnd="-12dp"
+        android:src="@drawable/ic_clear"
+        android:background="@drawable/rect_transparent"
+        app:layout_constraintBottom_toBottomOf="@id/edit_text_email"
+        app:layout_constraintTop_toTopOf="@id/edit_text_email"
+        app:layout_constraintEnd_toEndOf="@id/edit_text_email"/>
+
+    <View
+        android:layout_width="0dp"
+        android:layout_height="1dp"
+        android:background="@drawable/rect_divider"
+        app:layout_constraintStart_toStartOf="@id/edit_text_email"
+        app:layout_constraintEnd_toEndOf="@id/edit_text_email"
+        app:layout_constraintBottom_toBottomOf="@id/edit_text_email" />
+</androidx.constraintlayout.widget.ConstraintLayout>

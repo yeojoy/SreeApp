@@ -5,4 +5,6 @@
     <color name="orange_3">#ff5349</color>
     <color name="orange_4">#b13254</color>
     <color name="orange_5">#471337</color>
+
+    <color name="divider">#757575</color>
 </resources>
