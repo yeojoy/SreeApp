@@ -7,4 +7,12 @@
     <color name="orange_5">#471337</color>
 
     <color name="divider">#757575</color>
+
+    <color name="button_blue">#29aeff</color>
+    <color name="button_blue_pressed">#95ccee</color>
+
+    <color name="bg_right_color">#00ff3f</color>
+    <color name="bg_wrong_color">#ff479c</color>
+
+    <color name="bg_default_color">#6a6a6a</color>
 </resources>

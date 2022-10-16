@@ -4,33 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/text_view_title"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="64dp"
-        android:fontFamily="@font/presee_start_2p_r"
-        android:gravity="center"
-        android:lineSpacingExtra="12dp"
-        android:text="Sree app Manager"
-        android:textSize="36sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <com.livebarn.android.sreelibrary.view.InputLayout
         android:id="@+id/input_layout_email"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="4dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="48dp"
         android:layout_marginEnd="4dp"
         android:hint="your@mail.com"
         app:iconSrc="@drawable/ic_email"
         app:layoutInputType="email"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/text_view_title" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <com.livebarn.android.sreelibrary.view.InputLayout
         android:id="@+id/input_layout_password"
@@ -39,52 +25,53 @@
         android:layout_marginTop="8dp"
         android:hint="your password"
         android:inputType="textPassword"
-        app:minLength="@integer/passwordMinLength"
         app:iconSrc="@drawable/ic_lock"
         app:layoutInputType="password"
         app:layout_constraintEnd_toEndOf="@id/input_layout_email"
         app:layout_constraintStart_toStartOf="@id/input_layout_email"
-        app:layout_constraintTop_toBottomOf="@id/input_layout_email" />
+        app:layout_constraintTop_toBottomOf="@id/input_layout_email"
+        app:minLength="4" />
+
+    <com.livebarn.android.sreelibrary.view.InputLayout
+        android:id="@+id/input_layout_username"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="8dp"
+        android:hint="username"
+        android:inputType="textPassword"
+        app:iconSrc="@drawable/ic_person"
+        app:layoutInputType="text"
+        app:layout_constraintEnd_toEndOf="@id/input_layout_password"
+        app:layout_constraintStart_toStartOf="@id/input_layout_password"
+        app:layout_constraintTop_toBottomOf="@id/input_layout_password"
+        app:minLength="2" />
 
     <Button
-        android:id="@+id/button_login"
+        android:id="@+id/button_signup"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="16dp"
         android:backgroundTint="@color/orange_1"
-        android:text="Login"
+        android:text="Sign up"
         android:textAllCaps="false"
         android:textColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/input_layout_password" />
+        app:layout_constraintTop_toBottomOf="@id/input_layout_username" />
 
     <Button
-        android:id="@+id/button_forgot_password"
-        android:layout_width="0dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/rect_transparent"
-        android:text="Forgot password?"
-        android:textAllCaps="false"
-        android:textColor="@color/selector_button_text_forgot_password"
-        app:layout_constraintEnd_toEndOf="@id/button_login"
-        app:layout_constraintStart_toStartOf="@id/button_login"
-        app:layout_constraintTop_toBottomOf="@id/button_login" />
-
-    <Button
-        android:id="@+id/button_need_new_account"
+        android:id="@+id/button_want_login"
         android:layout_width="0dp"
         android:layout_height="48dp"
         android:layout_marginBottom="32dp"
         android:background="@drawable/rect_transparent"
-        android:text="Need a new account?"
+        android:text="Want to login?"
         android:textAllCaps="false"
         android:textColor="@color/selector_button_text_forgot_password"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="@id/button_login"
-        app:layout_constraintStart_toStartOf="@id/button_login" />
+        app:layout_constraintEnd_toEndOf="@id/button_signup"
+        app:layout_constraintStart_toStartOf="@id/button_signup" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

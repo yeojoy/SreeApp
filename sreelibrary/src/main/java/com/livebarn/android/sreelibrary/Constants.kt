@@ -3,7 +3,9 @@ package com.livebarn.android.sreelibrary
 object Constants {
 
     /* DB */
-    const val DB_TABLE = "SreeApp"
+    const val DB_URL = "https://sree-project-1f7a5-default-rtdb.firebaseio.com"
+    const val DB_NAME = "SreeApp"
+    const val DB_TABLE_USERS = "users"
     const val DB_PATH_MESSAGE = "message"
     const val DB_PATH_TARGET_GIF = "targetGif"
     const val DB_PATH_GIFS = "gifs"

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="padding_end_edit_text_normal">32dp</dimen>
+    <dimen name="padding_end_edit_text_visible_password">80dp</dimen>
+    <dimen name="padding_start_edit_text">32dp</dimen>
+</resources>

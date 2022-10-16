@@ -26,7 +26,7 @@ abstract class BaseActivity : FragmentActivity() {
 
     override fun onStart() {
         super.onStart()
-        databaseReference = Firebase.database.getReference(Constants.DB_TABLE)
+        databaseReference = Firebase.database.getReference(Constants.DB_NAME)
         databaseReference?.child(Constants.DB_PATH_MESSAGE)
             ?.addValueEventListener(messageValueListener)
         databaseReference?.child(Constants.DB_PATH_TARGET_GIF)

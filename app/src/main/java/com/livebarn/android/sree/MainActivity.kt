@@ -1,17 +1,8 @@
 package com.livebarn.android.sree
 
 import android.os.Bundle
-import android.util.Log
 import android.view.WindowManager
-import android.widget.ImageView
-import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
@@ -29,7 +20,7 @@ class MainActivity : BaseActivity() {
 
     override fun onStart() {
         super.onStart()
-        databaseReference = Firebase.database.getReference(Constants.DB_TABLE)
+        databaseReference = Firebase.database.getReference(Constants.DB_NAME)
         databaseReference?.child(Constants.DB_PATH_MESSAGE)
             ?.addValueEventListener(messageValueListener)
         databaseReference?.child(Constants.DB_PATH_TARGET_GIF)

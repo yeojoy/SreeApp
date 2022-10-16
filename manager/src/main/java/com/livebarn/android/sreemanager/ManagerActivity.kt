@@ -24,6 +24,7 @@ import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
 import com.livebarn.android.sreelibrary.hideKeyboard
 import com.livebarn.android.sreelibrary.model.CelebrationType
+import com.livebarn.android.sreemanager.app.ManagerApplication
 import com.livebarn.android.sreemanager.auth.LoginActivity
 
 class ManagerActivity : AppCompatActivity() {
@@ -192,7 +193,7 @@ class ManagerActivity : AppCompatActivity() {
     }
 
     private fun bindDatabase() {
-        val databaseReference = Firebase.database.getReference(Constants.DB_TABLE)
+        val databaseReference = Firebase.database.getReference(Constants.DB_NAME)
         messageDBReference = databaseReference.child(Constants.DB_PATH_MESSAGE)
         targetGifDBReference = databaseReference.child(Constants.DB_PATH_TARGET_GIF)
         gifsDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
