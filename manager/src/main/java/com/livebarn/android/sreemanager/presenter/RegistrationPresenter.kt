@@ -46,6 +46,7 @@ class RegistrationPresenter(
                 auth?.currentUser?.let {
                     val userMap = hashMapOf(
                         "username" to username,
+                        "email" to email,
                         "createdAt" to System.currentTimeMillis(),
                         "permission" to "user"
                     )

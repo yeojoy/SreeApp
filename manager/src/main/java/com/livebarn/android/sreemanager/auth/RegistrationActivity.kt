@@ -78,7 +78,6 @@ class RegistrationActivity : AppCompatActivity(), RegistrationContract.View {
 
     override fun onSignUpButtonClicked(user: FirebaseUser?, message: String?) {
         if (message.isNullOrEmpty()) {
-            (application as? ManagerApplication)?.currentUser = user
             setResult(Activity.RESULT_OK)
             finish()
         } else {

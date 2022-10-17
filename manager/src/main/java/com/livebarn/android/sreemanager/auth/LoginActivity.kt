@@ -3,17 +3,19 @@ package com.livebarn.android.sreemanager.auth
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.auth.FirebaseUser
+import com.livebarn.android.sreelibrary.BuildConfig
 import com.livebarn.android.sreelibrary.view.InputLayout
 import com.livebarn.android.sreemanager.R
 import com.livebarn.android.sreemanager.app.ManagerApplication
 import com.livebarn.android.sreemanager.contract.LoginContract
 import com.livebarn.android.sreemanager.presenter.LoginPresenter
+import java.text.SimpleDateFormat
+import java.util.*
 
 class LoginActivity : AppCompatActivity(), LoginContract.View {
 
@@ -58,7 +60,13 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
         }
 
         findViewById<Button>(R.id.button_forgot_password).setOnClickListener {
-            presenter?.clickForgotPassword(inputLayoutEmail?.text)
+            if (BuildConfig.DEBUG) {
+                val db = (application as? ManagerApplication)?.dbReference?.child("testField")
+                val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                db?.setValue("click datetime: ${formatter.format(Date())}")
+            } else {
+                presenter?.clickForgotPassword(inputLayoutEmail?.text)
+            }
         }
 
         findViewById<Button>(R.id.button_need_new_account).setOnClickListener {
@@ -72,7 +80,11 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
         inputLayoutPassword?.setValidationListener {
             buttonLogin?.isEnabled = it && inputLayoutEmail?.hasValidValue == true
         }
+    }
 
+    override fun onBackPressed() {
+        setResult(Activity.RESULT_CANCELED)
+        super.onBackPressed()
     }
 
     override fun onDestroy() {
@@ -83,7 +95,6 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
 
     override fun onLoginButtonClicked(user: FirebaseUser?, message: String?) {
         if (message.isNullOrEmpty()) {
-            (application as? ManagerApplication)?.currentUser = user
             moveManageActivity()
         } else {
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
@@ -106,8 +117,7 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
     }
 
     private fun moveManageActivity() {
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
+        setResult(Activity.RESULT_OK)
         finish()
     }
 }

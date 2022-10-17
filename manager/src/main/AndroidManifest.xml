@@ -13,16 +13,17 @@
         android:theme="@style/Theme.Sree">
         <activity
             android:name=".ManagerActivity"
-            android:exported="false"></activity>
-
-        <activity
-            android:name=".auth.LoginActivity"
-            android:configChanges="orientation|keyboard|keyboardHidden"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".auth.LoginActivity"
+            android:configChanges="orientation|keyboard|keyboardHidden"
+            android:exported="false">
         </activity>
 
         <activity

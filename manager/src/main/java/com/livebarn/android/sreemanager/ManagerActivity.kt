@@ -1,50 +1,45 @@
 package com.livebarn.android.sreemanager
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import android.widget.AdapterView.OnItemSelectedListener
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.ktx.database
-import com.google.firebase.ktx.Firebase
 import com.livebarn.android.sreelibrary.Constants
 import com.livebarn.android.sreelibrary.hideKeyboard
 import com.livebarn.android.sreelibrary.model.CelebrationType
+import com.livebarn.android.sreelibrary.model.User
 import com.livebarn.android.sreemanager.app.ManagerApplication
 import com.livebarn.android.sreemanager.auth.LoginActivity
+import com.livebarn.android.sreemanager.contract.ManagerContract
+import com.livebarn.android.sreemanager.presenter.ManagerPresenter
 
-class ManagerActivity : AppCompatActivity() {
+class ManagerActivity : AppCompatActivity(), ManagerContract.View {
 
     companion object {
         private const val TAG = "ManagerActivity"
         private val DEFAULT_GIF = Constants.claps["Standing Ovation"]
     }
 
-    private val clapsGifList = mutableListOf<String>()
-    private val happyBDayGifList = mutableListOf<String>()
-
-    private var messageDBReference: DatabaseReference? = null
-    private var targetGifDBReference: DatabaseReference? = null
-    private var gifsDBReference: DatabaseReference? = null
-    private var alignDBReference: DatabaseReference? = null
+    private var presenter: ManagerContract.Presenter? = null
 
     private var imageButtonAlignTop: ImageView? = null
     private var imageButtonAlignCenter: ImageView? = null
-    private var imageButtonAlignBotoom: ImageView? = null
+    private var imageButtonAlignBottom: ImageView? = null
 
     private var editTextMessage: EditText? = null
     private var imageViewSelectedGif: ImageView? = null
@@ -53,28 +48,45 @@ class ManagerActivity : AppCompatActivity() {
     private var spinnerCelebrationType: Spinner? = null
     private var recyclerViewGifs: RecyclerView? = null
 
+    private var menu: Menu? = null
     private var oldPosition = 0
-    private val gifList = mutableListOf<String>()
-    private var currentType = CelebrationType.NONE
 
     private val buttonBackgroundArray = arrayOf(
         com.livebarn.android.sreelibrary.R.drawable.rect_bg_button,
         com.livebarn.android.sreelibrary.R.drawable.rect_bg_button_selected
     )
 
+    private val loginWithResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            initViews()
+            presenter?.onViewCreated()
+        } else {
+            finish()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_manager)
 
-        initViews()
+        setPresenter(
+            ManagerPresenter(
+                this,
+                (application as? ManagerApplication)?.auth,
+                (application as? ManagerApplication)?.dbReference
+            )
+        )
 
-        val auth = (application as ManagerApplication).auth
-        auth?.let {
-            if (it.currentUser == null) {
-                val intent = Intent(this, LoginActivity::class.java)
-                startActivity(intent)
-                return
-            }
+        setSupportActionBar(findViewById(R.id.toolbar))
+
+        val currentUser = (application as? ManagerApplication)?.currentUser
+        if (currentUser == null) {
+            val intent = Intent(this, LoginActivity::class.java)
+            loginWithResult.launch(intent)
+        } else {
+            initViews()
+            presenter?.onViewCreated()
         }
     }
 
@@ -86,7 +98,7 @@ class ManagerActivity : AppCompatActivity() {
 
         imageButtonAlignTop = findViewById(R.id.image_button_align_top)
         imageButtonAlignCenter = findViewById(R.id.image_button_align_center)
-        imageButtonAlignBotoom = findViewById(R.id.image_button_align_bottom)
+        imageButtonAlignBottom = findViewById(R.id.image_button_align_bottom)
 
         textViewDummyMessage = findViewById(R.id.text_view_dummy_message)
 
@@ -97,9 +109,7 @@ class ManagerActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.button_save).setOnClickListener {
             val message = editTextMessage?.text.toString()
-            messageDBReference?.setValue(message)
-            editTextMessage?.setSelection(message.length)
-            hideKeyboard()
+            presenter?.clickSaveMessageButton(message)
         }
 
         editTextMessage?.addTextChangedListener(object : TextWatcher {
@@ -112,15 +122,14 @@ class ManagerActivity : AppCompatActivity() {
             }
         })
 
-        // TODO bind imagebutton event
         imageButtonAlignTop?.setOnClickListener {
-            alignDBReference?.setValue(Constants.DB_VALUE_TOP)
+            presenter?.clickAlignButton(Constants.DB_VALUE_TOP)
         }
         imageButtonAlignCenter?.setOnClickListener {
-            alignDBReference?.setValue(Constants.DB_VALUE_CENTER)
+            presenter?.clickAlignButton(Constants.DB_VALUE_CENTER)
         }
-        imageButtonAlignBotoom?.setOnClickListener {
-            alignDBReference?.setValue(Constants.DB_VALUE_BOTTOM)
+        imageButtonAlignBottom?.setOnClickListener {
+            presenter?.clickAlignButton(Constants.DB_VALUE_BOTTOM)
         }
 
         val types = CelebrationType.values().map { it.title }
@@ -135,9 +144,7 @@ class ManagerActivity : AppCompatActivity() {
             ) {
                 if (oldPosition != position) {
                     oldPosition = position
-                    currentType = CelebrationType.findById(position)
-                    Log.d(TAG, "onItemSelected(position: $position, ${currentType.title})")
-                    updateGifList()
+                    presenter?.clickType(position)
                 }
             }
 
@@ -147,25 +154,41 @@ class ManagerActivity : AppCompatActivity() {
         }
 
         recyclerViewGifs?.layoutManager = LinearLayoutManager(this)
-        recyclerViewGifs?.adapter = GifAdapter(gifList, this::onGifSelected)
+        presenter?.let {
+            recyclerViewGifs?.adapter = GifAdapter(it)
+        }
+
+        presenter?.onViewCreated()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        this.menu = menu
+        menuInflater.inflate(R.menu.menu_manager, menu)
+        menu?.findItem(R.id.action_handle_users)?.isVisible = presenter?.isAdminUser() == true
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_signout) {
+            presenter?.clickSignOut()
+        }
+        return true
     }
 
     override fun onStart() {
         super.onStart()
-        bindDatabase()
-    }
-
-    override fun onBackPressed() {
-        super.onBackPressed()
+        presenter?.bindDatabase()
     }
 
     override fun onStop() {
         super.onStop()
-        releaseDatabase()
+        presenter?.unbindDatabase()
     }
 
     override fun onDestroy() {
         super.onDestroy()
+        presenter?.onViewDestroyed()
+        presenter = null
         editTextMessage = null
         imageViewSelectedGif = null
         textViewMessageLength = null
@@ -173,196 +196,99 @@ class ManagerActivity : AppCompatActivity() {
         recyclerViewGifs = null
         imageButtonAlignTop = null
         imageButtonAlignCenter = null
-        imageButtonAlignBotoom = null
+        imageButtonAlignBottom = null
     }
 
-    private fun onGifSelected(position: Int) {
-        updateTargetGif(
-            try {
-                gifList[position]
-            } catch (e: Exception) {
-                null
+    override fun onAlignButtonClicked(alignment: String?) {
+        var textViewLayoutParams = textViewDummyMessage?.layoutParams as? ConstraintLayout.LayoutParams
+        when (alignment) {
+            Constants.DB_VALUE_TOP -> {
+                imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[1])
+                imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
+                imageButtonAlignBottom?.setBackgroundResource(buttonBackgroundArray[0])
+                textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
+                textViewLayoutParams?.bottomToBottom = -1
             }
-        )
-    }
-
-    private fun updateTargetGif(url: String?) {
-        url?.let {
-            targetGifDBReference?.setValue(url)
-        }
-    }
-
-    private fun bindDatabase() {
-        val databaseReference = Firebase.database.getReference(Constants.DB_NAME)
-        messageDBReference = databaseReference.child(Constants.DB_PATH_MESSAGE)
-        targetGifDBReference = databaseReference.child(Constants.DB_PATH_TARGET_GIF)
-        gifsDBReference = databaseReference.child(Constants.DB_PATH_GIFS)
-        alignDBReference = databaseReference.child(Constants.DB_PATH_LOCATION)
-
-        messageDBReference?.addValueEventListener(messageValueListener)
-        targetGifDBReference?.addValueEventListener(targetGifValueListener)
-        gifsDBReference?.addValueEventListener(gifsValueListener)
-        alignDBReference?.addValueEventListener(alignValueListener)
-    }
-
-    private fun releaseDatabase() {
-        messageDBReference?.removeEventListener(messageValueListener)
-        targetGifDBReference?.removeEventListener(targetGifValueListener)
-        gifsDBReference?.removeEventListener(gifsValueListener)
-
-        messageDBReference = null
-        targetGifDBReference = null
-        gifsDBReference = null
-    }
-
-    private val messageValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val message = snapshot.getValue(String::class.java)
-                ?: getString(R.string.default_congrats_message)
-            editTextMessage?.setText(message)
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() messageValueListener -> ${error.message}")
-        }
-    }
-
-    private val alignValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val textViewLayoutParams = textViewDummyMessage?.layoutParams as? ConstraintLayout.LayoutParams
-            when (snapshot.getValue(String::class.java)) {
-                Constants.DB_VALUE_TOP -> {
-                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[1])
-                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
-                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[0])
-                    textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
-                    textViewLayoutParams?.bottomToBottom = -1
-                }
-                Constants.DB_VALUE_CENTER -> {
-                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
-                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[1])
-                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[0])
-                    textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
-                    textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
-                }
-                else -> {
-                    imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
-                    imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
-                    imageButtonAlignBotoom?.setBackgroundResource(buttonBackgroundArray[1])
-                    textViewLayoutParams?.topToTop = -1
-                    textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
-                }
+            Constants.DB_VALUE_CENTER -> {
+                imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
+                imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[1])
+                imageButtonAlignBottom?.setBackgroundResource(buttonBackgroundArray[0])
+                textViewLayoutParams?.topToTop = R.id.image_view_selected_gif
+                textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
             }
-            textViewDummyMessage?.layoutParams = textViewLayoutParams
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() locationValueListener -> ${error.message}")
-        }
-    }
-
-    private val targetGifValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            val targetGif = snapshot.getValue(String::class.java)
-            imageViewSelectedGif?.let { view ->
-                Glide.with(this@ManagerActivity)
-                    .asGif()
-                    .load(
-                        if (targetGif.isNullOrEmpty())
-                            DEFAULT_GIF
-                        else
-                            targetGif
-                    )
-                    .into(view)
+            Constants.DB_VALUE_BOTTOM -> {
+                imageButtonAlignTop?.setBackgroundResource(buttonBackgroundArray[0])
+                imageButtonAlignCenter?.setBackgroundResource(buttonBackgroundArray[0])
+                imageButtonAlignBottom?.setBackgroundResource(buttonBackgroundArray[1])
+                textViewLayoutParams?.topToTop = -1
+                textViewLayoutParams?.bottomToBottom = R.id.image_view_selected_gif
+            }
+            else -> {
+                textViewLayoutParams = null
             }
         }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
+        textViewLayoutParams?.let {
+            textViewDummyMessage?.layoutParams = it
         }
     }
 
-    private val gifsValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            if (snapshot.hasChild(Constants.DB_PATH_GIF_CLAPS).not()
-                || snapshot.child(Constants.DB_PATH_GIF_CLAPS).hasChildren().not()) {
-                // TODO insert data
-                insertClapsGifs()
-                insertHappyBDayGifs()
-            } else {
-                clapsGifList.clear()
-                for (url in snapshot.child(Constants.DB_PATH_GIF_CLAPS).children) {
-                    (url.value as? String)?.let {
-                        clapsGifList.add(it)
-                    }
-                }
-            }
-
-            if (snapshot.hasChild(Constants.DB_PATH_GIF_HAPPY_BDAY)
-                && snapshot.child(Constants.DB_PATH_GIF_HAPPY_BDAY).hasChildren()) {
-                happyBDayGifList.clear()
-                for (url in snapshot.child(Constants.DB_PATH_GIF_HAPPY_BDAY).children) {
-                    (url.value as? String)?.let {
-                        happyBDayGifList.add(it)
-                    }
-                }
-            }
+    override fun onSaveMessageButtonClicked(message: String?) {
+        message?.let {
+            editTextMessage?.setText(it)
+            editTextMessage?.setSelection(it.length)
         }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() targetGifValueListener -> ${error.message}")
-        }
+        hideKeyboard()
     }
-
-    private fun insertHappyBDayGifs() {
-        gifsDBReference?.child(Constants.DB_PATH_GIF_HAPPY_BDAY)?.let {
-            for (url in Constants.happyBDay.values) {
-                it.push().setValue(url)
-            }
-        }
-    }
-
-    private fun insertClapsGifs() {
-        gifsDBReference?.child(Constants.DB_PATH_GIF_CLAPS)?.let {
-            for (url in Constants.claps.values) {
-                it.push().setValue(url)
-            }
-        }
-    }
-
 
     @SuppressLint("NotifyDataSetChanged")
-    private fun updateGifList() {
-        gifList.clear()
-        when (currentType) {
-            CelebrationType.HAPPY_B_DAY -> gifList.addAll(happyBDayGifList)
-            CelebrationType.ANNIVERSARY -> gifList.addAll(clapsGifList)
-            CelebrationType.NEW_PEOPLE -> gifList.addAll(clapsGifList)
-            else -> {
-
-            }
-        }
+    override fun onTypeClicked() {
         recyclerViewGifs?.adapter?.notifyDataSetChanged()
     }
 
+    override fun onGifClicked(url: String?) {
+        url?.let {
+            imageViewSelectedGif?.let { view ->
+                Glide.with(view)
+                    .asGif()
+                    .load(it)
+                    .into(view)
+            }
+        }
+    }
+
+    override fun onSignOutActionClicked() {
+        val intent = Intent(this, LoginActivity::class.java)
+        loginWithResult.launch(intent)
+    }
+
+    override fun onUserFetched(user: User?) {
+        (application as? ManagerApplication)?.currentUser = user
+        val title = StringBuilder("Hello")
+        user?.let {
+            title.append(" ${it.username}")
+        }
+        supportActionBar?.title = title
+
+        menu?.findItem(R.id.action_handle_users)?.isVisible = presenter?.isAdminUser() == true
+    }
+
+    override fun setPresenter(presenter: ManagerContract.Presenter) {
+        this.presenter = presenter
+    }
+
     class GifAdapter(
-        private val gifs: MutableList<String>,
-        private var itemSelectListener: ((position: Int) -> Unit)? = null
+        private var presenter: ManagerContract.Presenter
     ) : RecyclerView.Adapter<GifAdapter.GifViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GifViewHolder {
             val imageView = ImageView(parent.context)
             imageView.adjustViewBounds = true
 
-            return GifViewHolder(imageView, itemSelectListener)
+            return GifViewHolder(imageView, presenter::clickGif)
         }
 
         override fun onBindViewHolder(holder: GifViewHolder, position: Int) {
-            val gif = try {
-                gifs[position]
-            } catch (e: Exception) {
-                null
-            }
+            val gif = presenter.gifAt(position)
             holder.imageView?.let { view ->
                 Glide.with(view)
                     .asGif()
@@ -373,7 +299,7 @@ class ManagerActivity : AppCompatActivity() {
             }
         }
 
-        override fun getItemCount() = gifs.size
+        override fun getItemCount() = presenter.numberOfGifs()
 
         class GifViewHolder(
             itemView: View,
