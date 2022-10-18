@@ -8,4 +8,6 @@
 
     <string name="content_desc_button_clear">clear button</string>
     <string name="content_desc_selected_gif">selected gif</string>
+
+    <string name="label_message_length" formatted="false">Length: %d</string>
 </resources>

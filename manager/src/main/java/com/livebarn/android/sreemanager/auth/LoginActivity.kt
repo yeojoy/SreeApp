@@ -60,13 +60,7 @@ class LoginActivity : AppCompatActivity(), LoginContract.View {
         }
 
         findViewById<Button>(R.id.button_forgot_password).setOnClickListener {
-            if (BuildConfig.DEBUG) {
-                val db = (application as? ManagerApplication)?.dbReference?.child("testField")
-                val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-                db?.setValue("click datetime: ${formatter.format(Date())}")
-            } else {
-                presenter?.clickForgotPassword(inputLayoutEmail?.text)
-            }
+            presenter?.clickForgotPassword(inputLayoutEmail?.text)
         }
 
         findViewById<Button>(R.id.button_need_new_account).setOnClickListener {

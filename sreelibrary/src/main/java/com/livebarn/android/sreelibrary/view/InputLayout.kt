@@ -1,13 +1,15 @@
 package com.livebarn.android.sreelibrary.view
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Color
 import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.text.method.PasswordTransformationMethod
 import android.util.AttributeSet
 import android.util.Log
-import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
@@ -20,8 +22,7 @@ import com.livebarn.android.sreelibrary.util.Validator
  * CustomView for input email, password and username
  *
  * TODO
- * 1. password visibility
- * 2. accept custom validation
+ * 1. accept custom validation
  */
 class InputLayout(
     context: Context, attrs: AttributeSet?, defStyle: Int
@@ -37,13 +38,9 @@ class InputLayout(
         private const val TAG = "InputLayout"
     }
 
-    constructor(context: Context) : this(context, null, 0) {
-        initView(null)
-    }
+    constructor(context: Context) : this(context, null, 0)
 
-    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0) {
-        initView(attrs)
-    }
+    constructor(context: Context, attrs: AttributeSet?) : this(context, attrs, 0)
 
     init {
         initView(attrs)
@@ -56,40 +53,50 @@ class InputLayout(
     private var viewUnderline: View? = null
     private var listener: ((isValid: Boolean) -> Unit)? = null
 
-    private var isPasswordVisible = false
+    private lateinit var currentInputType: LayoutInputType
 
     var hasValidValue = false
     var text: String = ""
+    var currentHint = ""
 
+    @SuppressLint("ClickableViewAccessibility")
     private fun initView(attrs: AttributeSet?) {
-        val layoutInflater = LayoutInflater.from(context)
-        val view = layoutInflater.inflate(R.layout.layout_input, this, false)
-        addView(view)
+        inflate(context, R.layout.layout_input, this)
 
-        editText = view.findViewById(R.id.edit_text_content)
-        imageViewIcon = view.findViewById(R.id.image_view_edit_text_icon)
-        imageButtonClear = view.findViewById(R.id.image_button_clear)
-        imageButtonPasswordVisibility = view.findViewById(R.id.image_button_password_visibility)
-        viewUnderline = view.findViewById(R.id.view_underline)
+        editText = findViewById(R.id.edit_text_content)
+        imageViewIcon = findViewById(R.id.image_view_edit_text_icon)
+        imageButtonClear = findViewById(R.id.image_button_clear)
+        imageButtonPasswordVisibility = findViewById(R.id.image_button_password_visibility)
+        viewUnderline = findViewById(R.id.view_underline)
+
+        editText?.setHintTextColor(Color.LTGRAY)
 
         imageButtonClear?.setOnClickListener {
             editText?.setText("")
-            isPasswordVisible = false
-            imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility)
-            editText?.transformationMethod = PasswordTransformationMethod.getInstance()
         }
 
-        imageButtonPasswordVisibility?.setOnClickListener {
-            isPasswordVisible = isPasswordVisible.not()
-            val textLength = editText?.text.toString().length
-            if (isPasswordVisible) {
-                imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility_off)
-                editText?.transformationMethod = null
-            } else {
-                imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility)
-                editText?.transformationMethod = PasswordTransformationMethod.getInstance()
+        imageButtonPasswordVisibility?.setOnTouchListener { _, event ->
+            val length = editText?.length() ?: 0
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility_off)
+                    editText?.transformationMethod = null
+                    editText?.setSelection(length)
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility_off)
+                    editText?.transformationMethod = null
+                    editText?.setSelection(length)
+                    true
+                }
+                else -> {
+                    imageButtonPasswordVisibility?.setImageResource(R.drawable.ic_visibility)
+                    editText?.transformationMethod = PasswordTransformationMethod.getInstance()
+                    editText?.setSelection(length)
+                    false
+                }
             }
-            editText?.setSelection(textLength)
         }
 
         attrs?.let {
@@ -100,7 +107,7 @@ class InputLayout(
                 0).apply {
 
                 try {
-                    val layoutInputType = when (getInt(R.styleable.InputLayout_layoutInputType, 3)) {
+                    currentInputType = when (getInt(R.styleable.InputLayout_layoutInputType, 3)) {
                         1 -> LayoutInputType.EMAIL
                         2 -> LayoutInputType.PASSWORD
                         else -> LayoutInputType.TEXT
@@ -116,8 +123,8 @@ class InputLayout(
                     val minLength = getInt(R.styleable.InputLayout_minLength, -1)
                     val maxLength = getInt(R.styleable.InputLayout_maxLength, 100)
 
-                    Log.d(TAG, "initView() layoutInputType: $layoutInputType")
-                    when (layoutInputType) {
+                    Log.d(TAG, "initView() layoutInputType: $currentInputType")
+                    when (currentInputType) {
                         LayoutInputType.EMAIL -> {
                             editText?.inputType = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
                             setDefaultEmailValidation()
@@ -136,7 +143,7 @@ class InputLayout(
                             editText?.setPadding(paddingStart, 0, paddingEnd, 0)
                         }
                         else -> {
-                            editText?.inputType = InputType.TYPE_TEXT_VARIATION_NORMAL
+                            editText?.inputType = InputType.TYPE_CLASS_TEXT
                             setEditTextLengthValidation(
                                 if (minLength == -1) 2 else minLength,
                                 maxLength
@@ -147,28 +154,32 @@ class InputLayout(
                     editText?.hint = hint
                     imageViewIcon?.setImageResource(iconSrc)
 
-                    editText?.addTextChangedListener(object : TextWatcher {
-                        override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-                        override fun afterTextChanged(s: Editable?) {}
-
-                        override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                            text = s.toString()
-                            imageButtonClear?.visibility =
-                                if (text.isNotEmpty()) View.VISIBLE else GONE
-
-                            if (layoutInputType == LayoutInputType.PASSWORD) {
-                                imageButtonPasswordVisibility?.visibility =
-                                    if (text.isNotEmpty()) View.VISIBLE else View.GONE
-                            }
-                        }
-                    })
-
                 } finally {
                     recycle()
                 }
             }
         }
+
+        editText?.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+
+            override fun afterTextChanged(s: Editable?) {}
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                text = s.toString()
+                if (text.isNotEmpty()) {
+                    imageButtonClear?.visibility = View.VISIBLE
+                } else {
+                    imageButtonClear?.visibility = View.GONE
+                }
+
+                Log.d(TAG, "addTextChangedListener(), onTextChanged layoutInputType: $currentInputType")
+                if (currentInputType == LayoutInputType.PASSWORD) {
+                    imageButtonPasswordVisibility?.visibility =
+                        if (text.isNotEmpty()) View.VISIBLE else View.GONE
+                }
+            }
+        })
     }
 
     private fun setDefaultEmailValidation() {
@@ -235,9 +246,20 @@ class InputLayout(
         })
     }
 
+    override fun setHint(hint: String?) {
+        hint?.let {
+            currentHint = it
+            editText?.setHint(it)
+        }
+    }
+
     override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
         super.onLayout(changed, left, top, right, bottom)
         Log.d(TAG, "onLayout(left: $left, top: $top, right: $right, bottom: $bottom)")
+    }
+
+    override fun setValidationFormat(watch: TextWatcher) {
+        editText?.removeTextChangedListener(watch)
     }
 
     override fun setValidationListener(listener: ((isValid: Boolean) -> Unit)?) {
@@ -246,5 +268,7 @@ class InputLayout(
 }
 
 interface InputLayoutInterface {
+    fun setValidationFormat(watch: TextWatcher)
     fun setValidationListener(listener: ((isValid: Boolean) -> Unit)?)
+    fun setHint(hint: String?)
 }

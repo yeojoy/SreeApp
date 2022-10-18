@@ -80,8 +80,8 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
 
         setSupportActionBar(findViewById(R.id.toolbar))
 
-        val currentUser = (application as? ManagerApplication)?.currentUser
-        if (currentUser == null) {
+        val auth = (application as? ManagerApplication)?.auth
+        if (auth?.currentUser == null) {
             val intent = Intent(this, LoginActivity::class.java)
             loginWithResult.launch(intent)
         } else {
@@ -102,7 +102,12 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
 
         textViewDummyMessage = findViewById(R.id.text_view_dummy_message)
 
-        recyclerViewGifs = findViewById(R.id.recycler_view_gifs)
+        recyclerViewGifs = findViewById<RecyclerView>(R.id.recycler_view_gifs).apply {
+            layoutManager = LinearLayoutManager(this@ManagerActivity)
+            presenter?.let {
+                recyclerViewGifs?.adapter = GifAdapter(it)
+            }
+        }
         findViewById<ImageButton>(R.id.image_button_clear).setOnClickListener {
             editTextMessage?.setText("")
         }
@@ -118,7 +123,7 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 textViewMessageLength?.text =
-                    getString(com.livebarn.android.sreelibrary.R.string.label_message_length, editTextMessage?.length() ?: 0)
+                    getString(R.string.label_message_length, editTextMessage?.length() ?: 0)
             }
         })
 
@@ -153,11 +158,6 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
             }
         }
 
-        recyclerViewGifs?.layoutManager = LinearLayoutManager(this)
-        presenter?.let {
-            recyclerViewGifs?.adapter = GifAdapter(it)
-        }
-
         presenter?.onViewCreated()
     }
 
@@ -169,8 +169,9 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == R.id.action_signout) {
-            presenter?.clickSignOut()
+        when (item.itemId) {
+            R.id.action_signout -> presenter?.clickSignOut()
+            R.id.action_handle_users -> presenter?.clickUsers()
         }
         return true
     }
@@ -240,6 +241,14 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
         hideKeyboard()
     }
 
+    override fun warnNoAuthority() {
+        Toast.makeText(
+            this,
+            "You need to get an authority to do it. Please ask to Yeojong.",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
     @SuppressLint("NotifyDataSetChanged")
     override fun onTypeClicked() {
         recyclerViewGifs?.adapter?.notifyDataSetChanged()
@@ -259,6 +268,11 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
     override fun onSignOutActionClicked() {
         val intent = Intent(this, LoginActivity::class.java)
         loginWithResult.launch(intent)
+    }
+
+    override fun onUsersActionClicked() {
+        val intent = Intent(this, UsersActivity::class.java)
+        startActivity(intent)
     }
 
     override fun onUserFetched(user: User?) {

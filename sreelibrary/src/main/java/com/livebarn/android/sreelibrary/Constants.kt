@@ -12,6 +12,16 @@ object Constants {
     const val DB_PATH_LOCATION = "location"
     const val DB_PATH_GIF_CLAPS = "claps"
     const val DB_PATH_GIF_HAPPY_BDAY = "happyBDay"
+
+    const val DB_FIELD_CREATED_AT = "createdAt"
+    const val DB_FIELD_EMAIL = "email"
+    const val DB_FIELD_AUTHORITY = "authority"
+    const val DB_FIELD_USERNAME = "username"
+
+    const val DB_AUTHORITY_USER = "User"
+    const val DB_AUTHORITY_CONFIRMED_USER = "Confirmed User"
+    const val DB_AUTHORITY_ADMIN = "Admin"
+    const val DB_AUTHORITY_OWNER = "Owner"
     /* End of DB */
 
     /* value */

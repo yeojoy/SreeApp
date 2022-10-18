@@ -23,11 +23,15 @@
         <activity
             android:name=".auth.LoginActivity"
             android:configChanges="orientation|keyboard|keyboardHidden"
-            android:exported="false">
-        </activity>
+            android:exported="false" />
 
         <activity
             android:name=".auth.RegistrationActivity"
+            android:configChanges="orientation|keyboard|keyboardHidden"
+            android:exported="false" />
+
+        <activity
+            android:name=".UsersActivity"
             android:configChanges="orientation|keyboard|keyboardHidden"
             android:exported="false" />
     </application>

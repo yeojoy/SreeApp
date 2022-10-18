@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.livebarn.android.sreelibrary.BuildConfig
 import com.livebarn.android.sreelibrary.Constants
+import com.livebarn.android.sreelibrary.model.Authority
 import com.livebarn.android.sreelibrary.model.CelebrationType
 import com.livebarn.android.sreelibrary.model.User
 import com.livebarn.android.sreemanager.contract.ManagerContract
@@ -37,8 +38,6 @@ class ManagerPresenter(
     private var alignDBReference: DatabaseReference? = null
     private var userDBReference: DatabaseReference? = null
 
-    private var testDBReference: DatabaseReference? = dbReference?.child("testField")
-
     private var currentType = CelebrationType.NONE
     private var currentUser: User? = null
 
@@ -54,15 +53,19 @@ class ManagerPresenter(
     }
 
     override fun clickAlignButton(alignment: String) {
-        alignDBReference?.setValue(alignment)
+        if (hasAuthority()) {
+            alignDBReference?.setValue(alignment)
+        } else {
+            view?.warnNoAuthority()
+        }
     }
 
     override fun clickSaveMessageButton(message: String) {
-        if (BuildConfig.DEBUG) {
-            val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            testDBReference?.setValue("click datetime: ${formatter.format(Date())}")
+        if (hasAuthority()) {
+            messageDBReference?.setValue(message)
+        } else {
+            view?.warnNoAuthority()
         }
-        messageDBReference?.setValue(message)
     }
 
     override fun bindDatabase() {
@@ -94,8 +97,12 @@ class ManagerPresenter(
     }
 
     override fun clickGif(position: Int) {
-        gifAt(position)?.let {
-            targetGifDBReference?.setValue(it)
+        if (hasAuthority()) {
+            gifAt(position)?.let {
+                targetGifDBReference?.setValue(it)
+            }
+        } else {
+            view?.warnNoAuthority()
         }
     }
 
@@ -137,7 +144,13 @@ class ManagerPresenter(
         }
     }
 
-    override fun isAdminUser() = currentUser?.permission == "admin"
+    override fun clickUsers() {
+        view?.onUsersActionClicked()
+    }
+
+    override fun isAdminUser() =
+        currentUser?.authority?.lowercase() == Constants.DB_AUTHORITY_ADMIN.lowercase() ||
+                currentUser?.authority?.lowercase() == Constants.DB_AUTHORITY_OWNER.lowercase()
 
     override fun onViewCreated() {
         auth?.currentUser?.let {
@@ -232,6 +245,14 @@ class ManagerPresenter(
 
         override fun onCancelled(error: DatabaseError) {
             Log.e(TAG, "onCancelled() happyBDayGifssValueListener -> ${error.message}")
+        }
+    }
+
+    private fun hasAuthority(): Boolean {
+        if (currentUser == null) return false
+        return when (Authority.findByTitle(currentUser!!.authority)) {
+            Authority.USER -> false
+            else -> true
         }
     }
 

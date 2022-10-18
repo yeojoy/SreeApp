@@ -30,11 +30,13 @@ interface ManagerContract {
     interface View: BaseView<Presenter> {
         fun onAlignButtonClicked(alignment: String?)
         fun onSaveMessageButtonClicked(message: String?)
+        fun warnNoAuthority()
 
         fun onTypeClicked()
         fun onGifClicked(url: String?)
 
         fun onSignOutActionClicked()
+        fun onUsersActionClicked()
         fun onUserFetched(user: User?)
     }
 }
