@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.MenuItem
 import android.widget.Button
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -29,6 +31,7 @@ class UsersActivity : AppCompatActivity(), UsersContract.View {
         setPresenter(
             UsersPresenter(
                 this,
+                (application as? ManagerApplication)?.currentUser,
                 (application as? ManagerApplication)?.dbReference
             )
         )
@@ -83,6 +86,12 @@ class UsersActivity : AppCompatActivity(), UsersContract.View {
         buttonConfirmedUser.text = Constants.DB_AUTHORITY_CONFIRMED_USER
         buttonAdmin.text = Constants.DB_AUTHORITY_ADMIN
 
+        if (presenter?.isOwnerUser() == true) {
+            buttonAdmin.visibility = View.VISIBLE
+        } else {
+            buttonAdmin.visibility = View.GONE
+        }
+
         buttonUser.setOnClickListener {
             presenter?.changeAuthority(Authority.USER, position)
             dialog.dismiss()
@@ -129,6 +138,14 @@ class UsersActivity : AppCompatActivity(), UsersContract.View {
 
     override fun onUserAdded(position: Int) {
         recyclerView?.adapter?.notifyItemInserted(position)
+    }
+
+    override fun warnAdminCannotChangeAdmin() {
+        Toast.makeText(
+            this,
+            "Admin allows to change only \"User\" and \"Confirmed User\".",
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     override fun setPresenter(presenter: UsersContract.Presenter) {

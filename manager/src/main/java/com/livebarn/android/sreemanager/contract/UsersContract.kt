@@ -11,6 +11,9 @@ interface UsersContract {
         fun userAt(position: Int): User?
         fun clickUser(position: Int)
         fun changeAuthority(authority: Authority?, position: Int)
+
+        fun isOwnerUser(): Boolean
+        fun isAdminUser(): Boolean
     }
 
     interface View: BaseView<Presenter> {
@@ -20,5 +23,7 @@ interface UsersContract {
         fun onUserChanged(position: Int)
         fun onUserRemoved(position: Int)
         fun onUserAdded(position: Int)
+
+        fun warnAdminCannotChangeAdmin()
     }
 }

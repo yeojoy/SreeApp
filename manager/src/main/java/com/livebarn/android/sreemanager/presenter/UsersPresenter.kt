@@ -1,7 +1,10 @@
 package com.livebarn.android.sreemanager.presenter
 
 import android.util.Log
-import com.google.firebase.database.*
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
 import com.livebarn.android.sreelibrary.Constants
 import com.livebarn.android.sreelibrary.model.Authority
 import com.livebarn.android.sreelibrary.model.User
@@ -9,6 +12,7 @@ import com.livebarn.android.sreemanager.contract.UsersContract
 
 class UsersPresenter(
     private var view: UsersContract.View?,
+    private var currentUser: User?,
     dbReference: DatabaseReference?
 ) : UsersContract.Presenter {
 
@@ -31,7 +35,11 @@ class UsersPresenter(
 
     override fun clickUser(position: Int) {
         userAt(position)?.let {
-            view?.onUserClicked(Authority.findByTitle(it.authority), position)
+            if (isAdminUser() && it.authority == Constants.DB_AUTHORITY_ADMIN) {
+                view?.warnAdminCannotChangeAdmin()
+            } else {
+                view?.onUserClicked(Authority.findByTitle(it.authority), position)
+            }
         }
     }
 
@@ -42,6 +50,14 @@ class UsersPresenter(
                     ?.setValue(auth.title)
             }
         }
+    }
+
+    override fun isOwnerUser(): Boolean {
+        return  currentUser?.authority == Constants.DB_AUTHORITY_OWNER
+    }
+
+    override fun isAdminUser(): Boolean {
+        return currentUser?.authority == Constants.DB_AUTHORITY_ADMIN
     }
 
     override fun onViewCreated() {
@@ -60,6 +76,17 @@ class UsersPresenter(
                 return
 
             val user = User.newUser(snapshot.key.toString(), snapshot.value as? HashMap<*, *>)
+
+            if (user == currentUser) {
+                Log.d(TAG, "${user.username} is you, so remove it from the list")
+                return
+            }
+
+            if (user.authority == Constants.DB_AUTHORITY_OWNER) {
+                // Remove the owner from the list
+                return
+            }
+
             val index = users.indexOf(user)
 
             if (index < 0) {

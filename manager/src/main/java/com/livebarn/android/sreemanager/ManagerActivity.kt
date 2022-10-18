@@ -157,8 +157,6 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
                 Log.e(TAG, "onNothingSelected()")
             }
         }
-
-        presenter?.onViewCreated()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -276,6 +274,7 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
     }
 
     override fun onUserFetched(user: User?) {
+        Log.d(TAG, "onUserFetched(${user?.username})")
         (application as? ManagerApplication)?.currentUser = user
         val title = StringBuilder("Hello")
         user?.let {
