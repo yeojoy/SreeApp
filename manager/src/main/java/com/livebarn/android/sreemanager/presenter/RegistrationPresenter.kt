@@ -47,8 +47,8 @@ class RegistrationPresenter(
                     val userMap = hashMapOf(
                         Constants.DB_FIELD_CREATED_AT to System.currentTimeMillis(),
                         Constants.DB_FIELD_EMAIL to email,
-                        Constants.DB_FIELD_AUTHORITY to username,
-                        Constants.DB_FIELD_USERNAME to Constants.DB_AUTHORITY_USER
+                        Constants.DB_FIELD_AUTHORITY to Constants.DB_AUTHORITY_USER,
+                        Constants.DB_FIELD_USERNAME to username
                     )
                     userDBReference?.child(it.uid)?.setValue(userMap)
                     view?.onSignUpButtonClicked(user = it, null)

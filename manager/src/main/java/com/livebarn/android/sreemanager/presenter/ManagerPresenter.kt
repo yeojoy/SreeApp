@@ -251,8 +251,10 @@ class ManagerPresenter(
     private fun hasAuthority(): Boolean {
         if (currentUser == null) return false
         return when (Authority.findByTitle(currentUser!!.authority)) {
-            Authority.USER -> false
-            else -> true
+            Authority.OWNER -> true
+            Authority.ADMIN -> true
+            Authority.CONFIRMED_USER -> true
+            else -> false
         }
     }
 
