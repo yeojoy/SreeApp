@@ -6,13 +6,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
-import com.livebarn.android.sreelibrary.BuildConfig
 import com.livebarn.android.sreelibrary.Constants
 import com.livebarn.android.sreelibrary.model.Authority
-import com.livebarn.android.sreelibrary.model.CelebrationType
+import com.livebarn.android.sreelibrary.model.Category
 import com.livebarn.android.sreelibrary.model.User
 import com.livebarn.android.sreemanager.contract.ManagerContract
-import java.text.SimpleDateFormat
 import java.util.*
 
 class ManagerPresenter(
@@ -26,30 +24,26 @@ class ManagerPresenter(
     }
 
     private val gifs = mutableListOf<String>()
-    private val types = mutableListOf<CelebrationType>()
-
-    private val clapGifs = mutableListOf<String>()
-    private val happyBDayGifs = mutableListOf<String>()
+    private val categories = mutableListOf<Category>()
 
     private var messageDBReference: DatabaseReference? = null
     private var targetGifDBReference: DatabaseReference? = null
-    private var clapGifsDBReference: DatabaseReference? = null
-    private var happyBDayGifsDBReference: DatabaseReference? = null
     private var alignDBReference: DatabaseReference? = null
     private var userDBReference: DatabaseReference? = null
+    private var categoryDBReference: DatabaseReference? = null
+    private var categoryGifsDBReference: DatabaseReference? = null
+    private var gifsDBReference: DatabaseReference? = null
 
-    private var currentType = CelebrationType.NONE
     private var currentUser: User? = null
 
     init {
         messageDBReference = dbReference?.child(Constants.DB_PATH_MESSAGE)
         targetGifDBReference = dbReference?.child(Constants.DB_PATH_TARGET_GIF)
-        clapGifsDBReference = dbReference?.child(Constants.DB_PATH_GIFS)?.child(Constants.DB_PATH_GIF_CLAPS)
-        happyBDayGifsDBReference = dbReference?.child(Constants.DB_PATH_GIFS)?.child(Constants.DB_PATH_GIF_HAPPY_BDAY)
         alignDBReference = dbReference?.child(Constants.DB_PATH_LOCATION)
         userDBReference = dbReference?.child(Constants.DB_TABLE_USERS)
-
-        types.addAll(CelebrationType.values())
+        categoryDBReference = dbReference?.child(Constants.DB_PATH_CATEGORIES)
+        categoryGifsDBReference = dbReference?.child(Constants.DB_PATH_CATEGORY_GIFS)
+        gifsDBReference = dbReference?.child(Constants.DB_PATH_GIFS)
     }
 
     override fun clickAlignButton(alignment: String) {
@@ -71,16 +65,12 @@ class ManagerPresenter(
     override fun bindDatabase() {
         messageDBReference?.addValueEventListener(messageValueListener)
         targetGifDBReference?.addValueEventListener(targetGifValueListener)
-        clapGifsDBReference?.addValueEventListener(clapGifsValueListener)
-        happyBDayGifsDBReference?.addValueEventListener(happyBDayGifsValueListener)
         alignDBReference?.addValueEventListener(alignValueListener)
     }
 
     override fun unbindDatabase() {
         messageDBReference?.removeEventListener(messageValueListener)
         targetGifDBReference?.removeEventListener(targetGifValueListener)
-        clapGifsDBReference?.removeEventListener(clapGifsValueListener)
-        happyBDayGifsDBReference?.removeEventListener(happyBDayGifsValueListener)
         alignDBReference?.removeEventListener(alignValueListener)
     }
 
@@ -106,34 +96,40 @@ class ManagerPresenter(
         }
     }
 
-    override fun numberOfTypes(): Int {
-        return numberOfTypes()
-    }
-
-    override fun typeAt(position: Int): CelebrationType? {
+    override fun categoryAt(position: Int): Category? {
         return try {
-            types[position]
+            categories[position]
         } catch (e: Exception) {
             null
         }
     }
 
-    override fun clickType(position: Int) {
-        typeAt(position)?.let {
-            currentType = it
+    override fun clickCategory(position: Int) {
+        Log.d(TAG, "clickCategory($position)")
+        categoryAt(position)?.let {
             gifs.clear()
-            when (currentType) {
-                CelebrationType.HAPPY_B_DAY -> {
-                    gifs.addAll(happyBDayGifs)
-                }
-                CelebrationType.NONE -> {
+            if (it.path.isNullOrEmpty()) {
+                categoryGifsDBReference?.child(it.key)?.addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        snapshot.value?.let { path ->
+                            it.path = path.toString()
+                            loadGifs(it.path)
+                        }
+                    }
 
-                }
-                else -> {
-                    gifs.addAll(clapGifs)
+                    override fun onCancelled(error: DatabaseError) {
+                        Log.e(TAG, "onCancelled() categoryGifs listener -> ${error.message}")
+                    }
+
+                })
+            } else {
+                if (it.gifs.isEmpty()) {
+                    loadGifs(it.path)
+                } else {
+                    gifs.addAll(it.gifs)
                 }
             }
-            view?.onTypeClicked()
+            view?.onCategoryClicked()
         }
     }
 
@@ -167,16 +163,36 @@ class ManagerPresenter(
                 }
             })
         }
+
+        categoryDBReference?.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                categories.clear()
+                if (snapshot.hasChildren()) {
+                    for (child in snapshot.children) {
+                        val category = Category(child.key.toString(), child.value.toString())
+                        categories.add(category)
+                    }
+
+                    val titles = categories.map { it.title }
+                    view?.onCategoryFetched(titles)
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e(TAG, "onCancelled() happyBDayGifssValueListener -> ${error.message}")
+            }
+        })
     }
 
     override fun onViewDestroyed() {
         view = null
         messageDBReference = null
         targetGifDBReference = null
-        clapGifsDBReference = null
-        happyBDayGifsDBReference = null
+        categoryDBReference = null
+        categoryGifsDBReference = null
         alignDBReference = null
         userDBReference = null
+        gifsDBReference = null
     }
 
     private val messageValueListener = object : ValueEventListener {
@@ -210,44 +226,6 @@ class ManagerPresenter(
         }
     }
 
-    private val clapGifsValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            if (snapshot.hasChildren().not()) {
-                insertClapsGifs()
-            } else {
-                clapGifs.clear()
-                for (url in snapshot.children) {
-                    (url.value as? String)?.let {
-                        clapGifs.add(it)
-                    }
-                }
-            }
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() clapGifsValueListener -> ${error.message}")
-        }
-    }
-
-    private val happyBDayGifsValueListener = object : ValueEventListener {
-        override fun onDataChange(snapshot: DataSnapshot) {
-            if (snapshot.hasChildren().not()) {
-                insertHappyBDayGifs()
-            } else {
-                happyBDayGifs.clear()
-                for (url in snapshot.children) {
-                    (url.value as? String)?.let {
-                        happyBDayGifs.add(it)
-                    }
-                }
-            }
-        }
-
-        override fun onCancelled(error: DatabaseError) {
-            Log.e(TAG, "onCancelled() happyBDayGifssValueListener -> ${error.message}")
-        }
-    }
-
     private fun hasAuthority(): Boolean {
         if (currentUser == null) return false
         return when (Authority.findByTitle(currentUser!!.authority)) {
@@ -258,11 +236,36 @@ class ManagerPresenter(
         }
     }
 
-    private fun insertHappyBDayGifs() {
-        // TODO("Not yet implemented")
-    }
+    private fun loadGifs(path: String?) {
+        path?.let {
+            gifsDBReference?.child(path)?.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    if (snapshot.hasChildren()) {
+                        val gifs = mutableListOf<String>()
+                        for (child in snapshot.children) {
+                            val url = child.value.toString()
+                            gifs.add(url)
+                        }
 
-    private fun insertClapsGifs() {
-        // TODO("Not yet implemented")
+                        if (gifs.isNotEmpty()) {
+                            this@ManagerPresenter.gifs.addAll(gifs)
+
+                            for (category in categories) {
+                                if (category.path == it) {
+                                    category.gifs.clear()
+                                    category.gifs.addAll(gifs)
+                                    break
+                                }
+                            }
+                        }
+                    }
+                    view?.onCategoryClicked()
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e(TAG, "onCancelled() gifsDBReference's Value Listener -> ${error.message}")
+                }
+            })
+        }
     }
 }

@@ -2,7 +2,7 @@ package com.livebarn.android.sreemanager.contract
 
 import com.livebarn.android.sreelibrary.BasePresenter
 import com.livebarn.android.sreelibrary.BaseView
-import com.livebarn.android.sreelibrary.model.CelebrationType
+import com.livebarn.android.sreelibrary.model.Category
 import com.livebarn.android.sreelibrary.model.User
 
 interface ManagerContract {
@@ -17,9 +17,8 @@ interface ManagerContract {
         fun gifAt(position: Int): String?
         fun clickGif(position: Int)
 
-        fun numberOfTypes(): Int
-        fun typeAt(position: Int): CelebrationType?
-        fun clickType(position: Int)
+        fun categoryAt(position: Int): Category?
+        fun clickCategory(position: Int)
 
         fun clickSignOut()
         fun clickUsers()
@@ -32,11 +31,13 @@ interface ManagerContract {
         fun onSaveMessageButtonClicked(message: String?)
         fun warnNoAuthority()
 
-        fun onTypeClicked()
+        fun onCategoryClicked()
         fun onGifClicked(url: String?)
 
         fun onSignOutActionClicked()
         fun onUsersActionClicked()
         fun onUserFetched(user: User?)
+
+        fun onCategoryFetched(categories: List<String>)
     }
 }

@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -16,12 +17,12 @@ import android.widget.AdapterView.OnItemSelectedListener
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.livebarn.android.sreelibrary.Constants
 import com.livebarn.android.sreelibrary.hideKeyboard
-import com.livebarn.android.sreelibrary.model.CelebrationType
 import com.livebarn.android.sreelibrary.model.User
 import com.livebarn.android.sreemanager.app.ManagerApplication
 import com.livebarn.android.sreemanager.auth.LoginActivity
@@ -104,8 +105,10 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
 
         recyclerViewGifs = findViewById<RecyclerView>(R.id.recycler_view_gifs).apply {
             layoutManager = LinearLayoutManager(this@ManagerActivity)
+            addItemDecoration(DividerItemDecoration(this@ManagerActivity, LinearLayoutManager.VERTICAL))
+            Log.d(TAG, "on apply is presenter null? ${presenter == null}")
             presenter?.let {
-                recyclerViewGifs?.adapter = GifAdapter(it)
+                adapter = GifAdapter(it)
             }
         }
         findViewById<ImageButton>(R.id.image_button_clear).setOnClickListener {
@@ -137,9 +140,6 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
             presenter?.clickAlignButton(Constants.DB_VALUE_BOTTOM)
         }
 
-        val types = CelebrationType.values().map { it.title }
-        spinnerCelebrationType?.adapter =
-            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, types)
         spinnerCelebrationType?.onItemSelectedListener = object : OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?,
@@ -149,7 +149,7 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
             ) {
                 if (oldPosition != position) {
                     oldPosition = position
-                    presenter?.clickType(position)
+                    presenter?.clickCategory(position)
                 }
             }
 
@@ -248,8 +248,16 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
     }
 
     @SuppressLint("NotifyDataSetChanged")
-    override fun onTypeClicked() {
+    override fun onCategoryClicked() {
+        Log.w(TAG, "onCategoryClicked()")
         recyclerViewGifs?.adapter?.notifyDataSetChanged()
+        if (recyclerViewGifs == null) {
+            Log.e(TAG, "onCategoryClicked() recyclerView is null")
+        }
+
+        if (recyclerViewGifs?.adapter == null) {
+            Log.e(TAG, "onCategoryClicked() recyclerView's adapter is null")
+        }
     }
 
     override fun onGifClicked(url: String?) {
@@ -285,6 +293,12 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
         menu?.findItem(R.id.action_handle_users)?.isVisible = presenter?.isAdminUser() == true
     }
 
+    override fun onCategoryFetched(categories: List<String>) {
+        Log.d(TAG, "onCategoryFetched($categories)")
+        spinnerCelebrationType?.adapter =
+            ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, categories)
+    }
+
     override fun setPresenter(presenter: ManagerContract.Presenter) {
         this.presenter = presenter
     }
@@ -294,15 +308,16 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
     ) : RecyclerView.Adapter<GifAdapter.GifViewHolder>() {
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GifViewHolder {
-            val imageView = ImageView(parent.context)
-            imageView.adjustViewBounds = true
+            val view = LayoutInflater.from(parent.context)
+                .inflate(R.layout.row_gif, parent, false)
 
-            return GifViewHolder(imageView, presenter::clickGif)
+            return GifViewHolder(view, presenter::clickGif)
         }
 
         override fun onBindViewHolder(holder: GifViewHolder, position: Int) {
             val gif = presenter.gifAt(position)
-            holder.imageView?.let { view ->
+            Log.d(TAG, "onBindViewHolder(), gif -> $gif")
+            holder.imageView.let { view ->
                 Glide.with(view)
                     .asGif()
                     .load(
@@ -318,7 +333,7 @@ class ManagerActivity : AppCompatActivity(), ManagerContract.View {
             itemView: View,
             private var onClickListener: ((position: Int) -> Unit)?
         ) : RecyclerView.ViewHolder(itemView) {
-            var imageView = itemView as? ImageView
+            val imageView: ImageView = itemView.findViewById(R.id.image_view_gif)
 
             init {
                 itemView.setOnClickListener {

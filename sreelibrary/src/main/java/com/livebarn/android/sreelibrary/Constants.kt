@@ -8,10 +8,10 @@ object Constants {
     const val DB_TABLE_USERS = "users"
     const val DB_PATH_MESSAGE = "message"
     const val DB_PATH_TARGET_GIF = "targetGif"
-    const val DB_PATH_GIFS = "gifs"
     const val DB_PATH_LOCATION = "location"
-    const val DB_PATH_GIF_CLAPS = "claps"
-    const val DB_PATH_GIF_HAPPY_BDAY = "happyBDay"
+    const val DB_PATH_CATEGORIES = "categories"
+    const val DB_PATH_CATEGORY_GIFS = "category-gifs"
+    const val DB_PATH_GIFS = "gifs"
 
     const val DB_FIELD_CREATED_AT = "createdAt"
     const val DB_FIELD_EMAIL = "email"
