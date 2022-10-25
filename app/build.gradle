@@ -11,8 +11,8 @@ android {
         applicationId "com.livebarn.android.sree"
         minSdk 26
         targetSdk 33
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.0"
 
     }
 
@@ -41,6 +41,13 @@ android {
 
         debug {
             signingConfig signingConfigs.debug
+        }
+    }
+
+    // change exported .apk file name
+    android.applicationVariants.all { variant ->
+        variant.outputs.all {
+            outputFileName = "sree-app-${variant.buildType.name}-${variant.versionName}-${variant.versionCode}.apk"
         }
     }
 }

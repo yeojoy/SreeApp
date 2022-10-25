@@ -26,6 +26,7 @@
         android:background="@drawable/rect_bg_text_view"
         android:paddingStart="12dp"
         android:paddingTop="6dp"
+        android:gravity="center"
         android:paddingEnd="12dp"
         android:paddingBottom="6dp"
         android:textColor="#303030"
