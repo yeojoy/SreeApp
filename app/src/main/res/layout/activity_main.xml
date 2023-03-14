@@ -24,9 +24,9 @@
         android:layout_marginTop="10dp"
         android:layout_marginBottom="10dp"
         android:background="@drawable/rect_bg_text_view"
+        android:gravity="center"
         android:paddingStart="12dp"
         android:paddingTop="6dp"
-        android:gravity="center"
         android:paddingEnd="12dp"
         android:paddingBottom="6dp"
         android:textColor="#303030"
@@ -36,4 +36,25 @@
         app:layout_constraintStart_toStartOf="parent"
         tools:text="Congrats Sree! You did great job!" />
 
+    <ImageView
+        android:id="@+id/image_view_livebarn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:visibility="gone"
+        android:contentDescription="@string/content_desc_selected_gif"
+        android:src="@drawable/livebarn_logo_big"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <nl.dionsegijn.konfetti.xml.KonfettiView
+        android:id="@+id/confetti_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

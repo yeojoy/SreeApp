@@ -1,5 +1,6 @@
 package com.livebarn.android.sree
 
+import android.os.Handler
 import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
@@ -11,7 +12,10 @@ import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.ktx.database
 import com.google.firebase.ktx.Firebase
+import com.livebarn.android.sree.util.ConfettiManager
 import com.livebarn.android.sreelibrary.Constants
+import nl.dionsegijn.konfetti.xml.KonfettiView
+import kotlin.random.Random
 
 abstract class BaseActivity : FragmentActivity() {
 
@@ -23,6 +27,9 @@ abstract class BaseActivity : FragmentActivity() {
     var imageView: ImageView? = null
     var textViewMessage: TextView? = null
     var databaseReference: DatabaseReference? = null
+    var confettiView: KonfettiView? = null
+
+    var handler: Handler? = null
 
     override fun onStart() {
         super.onStart()
@@ -48,11 +55,31 @@ abstract class BaseActivity : FragmentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler?.removeCallbacks(runnableConfetti)
+        handler = null
         imageView = null
         textViewMessage = null
     }
 
-    val messageValueListener = object : ValueEventListener {
+    private fun showConfetti() {
+        for (i in 1..4) {
+            val x = if (i % 2 == 1) Random.nextDouble(0.0, 0.5)
+            else Random.nextDouble(0.5, 1.0)
+            val y = Random.nextDouble(0.0, 1.0)
+            handler?.postDelayed({
+                confettiView?.start(ConfettiManager.explode(x, y))
+            }, i * 200L)
+        }
+
+        handler?.removeCallbacks(runnableConfetti)
+        handler?.postDelayed(runnableConfetti, 5000L)
+    }
+
+    private val runnableConfetti = Runnable {
+        showConfetti()
+    }
+
+    private val messageValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             val message = snapshot.getValue(String::class.java)
             if (message.isNullOrEmpty())
@@ -67,7 +94,7 @@ abstract class BaseActivity : FragmentActivity() {
         }
     }
 
-    val locationValueListener = object : ValueEventListener {
+    private val locationValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             val location = snapshot.getValue(String::class.java)
             val params = textViewMessage?.layoutParams as? ConstraintLayout.LayoutParams
@@ -94,7 +121,7 @@ abstract class BaseActivity : FragmentActivity() {
         }
     }
 
-    val targetGifValueListener = object : ValueEventListener {
+    private val targetGifValueListener = object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
             var targetGif = snapshot.getValue(String::class.java)
             if (targetGif.isNullOrEmpty()) {
@@ -102,6 +129,7 @@ abstract class BaseActivity : FragmentActivity() {
             }
 
             setGif(targetGif)
+            showConfetti()
         }
 
         override fun onCancelled(error: DatabaseError) {
@@ -111,4 +139,5 @@ abstract class BaseActivity : FragmentActivity() {
     }
 
     abstract fun setGif(url: String?)
+
 }

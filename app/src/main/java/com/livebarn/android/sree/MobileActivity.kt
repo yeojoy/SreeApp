@@ -1,6 +1,8 @@
 package com.livebarn.android.sree
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.WindowManager
 import android.widget.ImageView
@@ -23,8 +25,11 @@ class MobileActivity : BaseActivity() {
         setContentView(R.layout.activity_main)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
+        handler = Handler(Looper.getMainLooper())
+
         imageView = findViewById(R.id.image_view_gif)
         textViewMessage = findViewById(R.id.text_view_message)
+        confettiView = findViewById(R.id.confetti_view)
     }
 
     override fun setGif(url: String?) {
